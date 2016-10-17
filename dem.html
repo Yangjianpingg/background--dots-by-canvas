@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta name="keywords" content="">
+    <meta name="description" content="">
+    <!--[if lt IE 9]>
+    <script src="http://cdn.bootcss.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="http://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style>
+        html, body {
+            height: 100%;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+
+        .demo {
+            height: 100%;
+            overflow: hidden;
+        }
+    </style>
+    <title>Title</title>
+</head>
+<body>
+<div class="demo">
+    <canvas id="canvas"></canvas>
+</div>
+
+</body>
+<script src="function.js"></script>
+<script>
+
+    var canvas = document.getElementById('canvas'),
+            ctx = canvas.getContext('2d'),
+            color = ['#16a085', '#27ae60', '#2c3e50', '#f39c12', '#e74c3c', '#9b59b6', '#FB6964', '#342224', "#472E32", "#BDBB99", "#77B1A9", "#73A857"],
+            colorsNumber = color.length,
+            //定义圆的个数
+            dotNum = 50,
+            dotBox = [],
+            //定义连线的最大距离
+            maxLineDistance = 80,
+            //定义圆的半径
+            dotR = 4,
+            //定义画布的大小
+            canavsWidth = document.body.clientWidth || document.documentElement.clientWidth || window.innerWidth,
+            canvasHeight = document.body.clientHeight || document.documentElement.clientHeight || window.innerHeight;
+    canvas.width = canavsWidth;
+    canvas.height = canvasHeight;
+    EventUtil.getAddHandler(window, "resize", function () {
+        canvas.width = document.body.clientWidth || document.documentElement.clientWidth || window.innerWidth;
+        canvas.height = document.body.clientHeight || document.documentElement.clientHeight || window.innerHeight;
+    });
+    //        定义requestAnimFrame
+    var anima = (function () {
+        return window.requestAnimationFrame ||
+                window.webkitRequestAnimationFrame ||
+                window.mozRequestAnimationFrame ||
+                window.oRequestAnimationFrame ||
+                window.msRequestAnimationFrame ||
+                function (callback) {
+                    window.setTimeout(callback, 1000 / 60);
+                };
+    })();
+    //        创建50个小圆，且位置随机,加速度方向随机,颜色随机
+    for (; dotNum--;) {
+        var x = Math.random() * canvas.width,
+                y = Math.random() * canvas.height,
+                gx = Math.random() * 2 - 1,
+                gy = Math.random() * 2 - 1,
+                dotcolor = color[Math.floor(Math.random() * (colorsNumber - 1))];
+        dotBox.push({
+            dotx: x,
+            doty: y,
+            dotgx: gx,
+            dotgy: gy,
+            dotcolor: dotcolor
+
+        })
+    }
+    //        储存鼠标move事件的坐标
+    var mouseXy = {
+        dotx: null,
+        doty: null
+    };
+    window.onmousemove = function (event) {
+        event = event || window.event;
+        mouseXy.dotx = event.clientX;
+        mouseXy.doty = event.clientY;
+
+
+    };
+    window.onmouseout = function () {
+        mouseXy.dotx = null;
+        mouseXy.doty = null;
+    };
+    anima(animate) || animate();
+    //        定义每一帧动画
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (mouseXy.dotx === null) {
+            var dotBoxAnother = dotBox.concat();
+        } else {
+            dotBoxAnother = dotBox.concat([mouseXy]);
+        }
+
+        dotBox.forEach(function (dot) {
+
+            dot.dotx += dot.dotgx;
+            dot.doty += dot.dotgy;
+            dot.dotgx *= (dot.dotx > canvas.width || dot.dotx <= dotR / 4) ? -1 : 1;
+            dot.dotgy *= (dot.doty > canvas.height || dot.doty <= dotR / 4) ? -1 : 1;
+            ctx.beginPath();
+            ctx.arc(dot.dotx, dot.doty, dotR, 0, 2 * Math.PI, false);
+            ctx.fillStyle = dot.dotcolor;
+            ctx.fill();
+            ctx.closePath();
+            for (var _l = dotBoxAnother.length; _l--;) {
+                var _date = dotBoxAnother[_l];
+                var disx = dot.dotx - _date.dotx,
+                        disy = dot.doty - _date.doty,
+                        distance = Math.sqrt(disx * disx + disy * disy);
+
+                if (distance < maxLineDistance) {
+                    if (_date === mouseXy) {
+                        dot.dotx -= disx * 0.06;
+                        dot.doty -= disy * 0.06;
+                    }
+                    ctx.beginPath();
+                    ctx.moveTo(dot.dotx, dot.doty);
+                    ctx.lineTo(_date.dotx, _date.doty);
+                    ctx.strokeStyle = dot.dotcolor;
+                    ctx.stroke();
+//
+
+//                        }
+
+                }
+            }
+            dotBoxAnother.splice(dotBoxAnother.indexOf(dot), 1)
+
+
+        });
+//动画循环
+        anima(animate) || animate();
+
+
+    }
+</script>
+</html>
